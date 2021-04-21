@@ -211,29 +211,12 @@ char* serverIndex =
  " }, 5000);"
  "</script>";
 
- String webPage = "<!DOCTYPE HTML>";
- 
 /*
  * setup function
  */
 
 void setup() 
 {
-      webPage += "<html>";
-      webPage += "<head>";
-      webPage += "<meta name=\"viewport\" content=\"width=device-width,";
-      webPage += "initial-scale=1\">";
-      webPage += "</head>";
-      webPage += "<body>";
-      webPage += "<h1>ESP32 - Web Server</h1>";
-      webPage += "<p>AnalogPin 34 = ";
-      webPage += "</p>";
-      webPage += "<p>AnalogPin 36 = ";
-      webPage += "</p>";
-      webPage += "<p>AnalogPin 39 = ";
-      webPage += "</p>";
-      webPage += "</body></html>";
-
   // put your setup code here, to run once:
   Serial.begin(115200);
   sensors.begin();
