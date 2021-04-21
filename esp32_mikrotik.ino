@@ -149,8 +149,8 @@ const char* loginIndex =
 /*
  * Server Index Page
  */
-
 char* serverIndex =
+"<div id='metrics' style='height: 200px;'></div>"
 "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
 "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
    "<input type='file' name='update'>"
@@ -172,7 +172,7 @@ char* serverIndex =
   "<form action='/changesim' method='get'>"
   "<input type='submit' value='Change SIM'>"
   "</form>"
- "<script>"
+  "<script>"
   "$('form').submit(function(e){"
   "e.preventDefault();"
   "var form = $('#upload_form')[0];"
@@ -200,14 +200,40 @@ char* serverIndex =
  "}"
  "});"
  "});"
+ ""
+ "setInterval(function() { "
+   "$.ajax({"
+     "url: '/metrics',"
+     "type: 'GET',"
+     "success: function(data) { $('#metrics').html(data); },"
+     "error: function() { $('#metrics').html('Хер получишь эти ваши данные!!!'); },"
+   "});"
+ " }, 5000);"
  "</script>";
 
+ String webPage = "<!DOCTYPE HTML>";
+ 
 /*
  * setup function
  */
 
 void setup() 
 {
+      webPage += "<html>";
+      webPage += "<head>";
+      webPage += "<meta name=\"viewport\" content=\"width=device-width,";
+      webPage += "initial-scale=1\">";
+      webPage += "</head>";
+      webPage += "<body>";
+      webPage += "<h1>ESP32 - Web Server</h1>";
+      webPage += "<p>AnalogPin 34 = ";
+      webPage += "</p>";
+      webPage += "<p>AnalogPin 36 = ";
+      webPage += "</p>";
+      webPage += "<p>AnalogPin 39 = ";
+      webPage += "</p>";
+      webPage += "</body></html>";
+
   // put your setup code here, to run once:
   Serial.begin(115200);
   sensors.begin();
@@ -279,6 +305,9 @@ void setup()
     }
   });
   server.on("/changesim", change_sim);
+  server.on("/metrics", HTTP_GET, []() {
+    server.send(200, "text/html", metrics());  
+  });
   server.begin();
 
 
@@ -493,4 +522,10 @@ void change_sim() {
   GetRequestChangeSim.sendTo(netAdd);               
   GetRequestChangeSim.clearOIDList();
   snmp.resetSetOccurred();
+}
+
+String metrics() {
+  String result;
+  result += "beverage: " + String(random(100));
+  return result;
 }
