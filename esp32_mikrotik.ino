@@ -48,7 +48,7 @@ uint32_t ms_btn = 0;
 bool state_btn  = true;
 void taskButton1( void *pvParameters );
 SemaphoreHandle_t btn1Semaphore;
-
+void change_sim();
 
 //параметры дисплея
 LiquidCrystal_I2C lcd(0x27,20,4);
@@ -150,13 +150,28 @@ const char* loginIndex =
  * Server Index Page
  */
 
-const char* serverIndex =
+char* serverIndex =
 "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
 "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
    "<input type='file' name='update'>"
         "<input type='submit' value='Update'>"
-    "</form>"
- "<div id='prg'>progress: 0%</div>"
+   "</form>"
+ "<div id='prg'>progress: 0%</div><br>"
+  "<form action='/startengine' method='get'>"
+  "<input type='submit' value='Start Engine'>"
+  "</form>"
+    "<form action='/open' method='get'>"
+  "<input type='submit' value='Open Behemoth'>"
+  "</form>"
+   "<form action='/close' method='get'>"
+  "<input type='submit' value='Close Behemoth'>"
+  "</form>"
+    "<form action='/find' method='get'>"
+  "<input type='submit' value='Find Behemoth'>"
+  "</form>"
+  "<form action='/changesim' method='get'>"
+  "<input type='submit' value='Change SIM'>"
+  "</form>"
  "<script>"
   "$('form').submit(function(e){"
   "e.preventDefault();"
@@ -227,11 +242,14 @@ void setup()
   }
   Serial.println("mDNS responder started");
   /*return index page which is stored in serverIndex */
+  /*
+   * 
   server.on("/", HTTP_GET, []() {
     server.sendHeader("Connection", "close");
     server.send(200, "text/html", loginIndex);
   });
-  server.on("/serverIndex", HTTP_GET, []() {
+  */
+  server.on("/", HTTP_GET, []() {
     server.sendHeader("Connection", "close");
     server.send(200, "text/html", serverIndex);
   });
@@ -260,6 +278,7 @@ void setup()
       }
     }
   });
+  server.on("/changesim", change_sim);
   server.begin();
 
 
@@ -286,7 +305,8 @@ callbackTime = snmp.findCallback(".1.3.6.1.4.1.14988.1.1.12.1.0", false);
    xTaskCreateUniversal(taskButton1, "btn1", 4096, NULL, 5, NULL,1);
 
   // установка системного времени, полученного по SNMP
-while (snmptime < 10000){
+while (snmptime < 60){ // ждем минуту для установки времени, если время не устанавливается, идем дальше
+  snmptime = snmptime + 1;
   getSNMPtime();
   delay(1000);
   }
@@ -416,9 +436,6 @@ void LcdPrint () {
 void headerNotConnect() {
   lcd.setCursor(0,0);
   lcd.print("   Not Connected    ");
-  // затираем строку со временем и датой
-  lcd.setCursor(0,1);
-  lcd.print("                    "); 
   delay(2000);
 }
 
@@ -456,21 +473,24 @@ void taskButton1( void *pvParameters ){
           state_btn = st;
           ms_btn    = ms;
           if( st == LOW ){
-            lcd.setCursor(0,3);
-            lcd.print("  change sim-slot");
-
-            GetRequestChangeSim.addOIDPointer(callbackChangeSim);                
-            GetRequestChangeSim.setIP(WiFi.localIP());                 
-            GetRequestChangeSim.setUDP(&Udp);
-            GetRequestChangeSim.setRequestID(rand() % 5555);                
-            GetRequestChangeSim.sendTo(netAdd);               
-            GetRequestChangeSim.clearOIDList();
-            snmp.resetSetOccurred();
-           
+           change_sim();           
          }
          
 // Задержка для устранения дребезга контактов
           vTaskDelay(TM_BUTTON);
       }
    }
+}
+
+void change_sim() {
+  lcd.setCursor(0,2);
+  lcd.print("  change sim-slot   ");
+
+  GetRequestChangeSim.addOIDPointer(callbackChangeSim);                
+  GetRequestChangeSim.setIP(WiFi.localIP());                 
+  GetRequestChangeSim.setUDP(&Udp);
+  GetRequestChangeSim.setRequestID(rand() % 5555);                
+  GetRequestChangeSim.sendTo(netAdd);               
+  GetRequestChangeSim.clearOIDList();
+  snmp.resetSetOccurred();
 }
