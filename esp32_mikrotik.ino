@@ -302,8 +302,7 @@ void loop() {
   getSNMP();
   server.handleClient();
   sensors.requestTemperatures();
-  delay(2000);
-  //delay(1);
+  delay(500);
 }
 
 void getSNMP(){
