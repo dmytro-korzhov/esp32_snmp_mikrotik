@@ -63,8 +63,8 @@ unsigned long timeLast = 0;
 //промежуточные переменные для корректного вывода на дисплеей
 String OperatorCode;
 String CountryCode;
-String Operator;
-String Country;
+char* Operator;
+char* Country;
 String PrintRSRP;
 int countryIndex;
 int operatorIndex;
@@ -150,7 +150,7 @@ const char* loginIndex =
  * Server Index Page
  */
 char* serverIndex =
-"<div id='metrics' style='height: 200px;'></div>"
+"<div id='metrics' style='height: 100px;'></div>"
 "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
 "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
    "<input type='file' name='update'>"
@@ -206,7 +206,7 @@ char* serverIndex =
      "url: '/metrics',"
      "type: 'GET',"
      "success: function(data) { $('#metrics').html(data); },"
-     "error: function() { $('#metrics').html('Хер получишь эти ваши данные!!!'); },"
+     "error: function() { $('#metrics').html('no connection!!!'); },"
    "});"
  " }, 5000);"
  "</script>";
@@ -509,6 +509,8 @@ void change_sim() {
 
 String metrics() {
   String result;
-  result += "beverage: " + String(random(100));
+  result += "Temp in : " + String(int(round(sensors.getTempC(sensor2))));result += " С";result += "<br>";
+  result += "Temp out: " + String(int(round(sensors.getTempC(sensor1))));result += " С";result += "<br>";
+  result += "RSSI: " + PrintRSRP;result += "    ";result += operators[countryIndex][operatorIndex];result += " ";result += Country;result += "<br>";
   return result;
 }
