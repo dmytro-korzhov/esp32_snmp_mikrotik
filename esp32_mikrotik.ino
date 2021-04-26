@@ -8,6 +8,11 @@
 #include <Update.h>
 #include "OneWire.h"
 #include "DallasTemperature.h"
+#include "U8g2lib.h"
+
+// конфигурация OLED дисплея
+U8G2_SSD1322_NHD_256X64_F_4W_SW_SPI u8g2(U8G2_R0, 18, 23, 5, 13, 14);
+
 
 // Порт GPIO к которому подключена кнопка
 #define PIN_BUTTON 26
@@ -21,8 +26,8 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 // Адреса температурных датчиков
-DeviceAddress sensor1 = { 0x28, 0x23, 0x2C, 0xEA, 0xC, 0x0, 0x0, 0xC1 };
-DeviceAddress sensor2 = { 0x28, 0xDB, 0xE6, 0xEA, 0xC, 0x0, 0x0, 0x8D };
+DeviceAddress sensor_out = { 0x28, 0x23, 0x2C, 0xEA, 0xC, 0x0, 0x0, 0xC1 };
+DeviceAddress sensor_int = { 0x28, 0xDB, 0xE6, 0xEA, 0xC, 0x0, 0x0, 0x8D };
 void gettemp();
 
 // настройки подключения к wi-fi
@@ -38,8 +43,8 @@ void getSNMPtime();
 
 //описание массива для корректного отображения календаря
 const char *calendar[2][13] = {
-  {0, "Jan", "Feb", "Mar", "Apr", "May" "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"},
-  {0, "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"},
+  {0, "января", "февраля", "марта", "апреля", "мая" "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"},
+  {0, "воскресение", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"},
 };
 
 
@@ -68,6 +73,16 @@ char* Country;
 String PrintRSRP;
 int countryIndex;
 int operatorIndex;
+String PrintDate;
+char printdate[40];
+int printdatex;
+String OperCount;
+char opercount[15];
+int printopercount;
+String PrintTemp;
+char printtemp[8];
+int printtempx;
+int forreboot = 0;
 
 //описание массива вида [страна][оператор] для определения и вывода на дисплей имя сотового оператора
 const char *operators[3][100] = {
@@ -147,33 +162,34 @@ const char* loginIndex =
 "</script>";
 
 /*
+ * 
  * Server Index Page
  */
 char* serverIndex =
-"<div id='metrics' style='height: 100px;'></div>"
-"<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
-"<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
-   "<input type='file' name='update'>"
-        "<input type='submit' value='Update'>"
-   "</form>"
- "<div id='prg'>progress: 0%</div><br>"
+"<div id='metrics' style='height: 400px;font-size: 500%;'></div>"
   "<form action='/startengine' method='get'>"
-  "<input type='submit' value='Start Engine'>"
+    "<input style='width: 99.5%;height: 80px;background:#8d95f3;cursor:pointer;border-radius: 5px;font-size:60px;font-weight:bold;margin: 5px' type='submit' value='Start Engine'>"
   "</form>"
-    "<form action='/open' method='get'>"
-  "<input type='submit' value='Open Behemoth'>"
+  "<form action='/open' method='get'>"
+    "<input style='width: 45%;height: 80px;background:#f38d8d;cursor:pointer;border-radius: 5px;float: left;font-size:40px;font-weight:bold;margin: 5px' type='submit' value='Open Behemoth'>"
   "</form>"
-   "<form action='/close' method='get'>"
-  "<input type='submit' value='Close Behemoth'>"
+  "<form action='/close' method='get'>"
+    "<input style='width: 45%;height: 80px;background:#8df39e;cursor:pointer;border-radius: 5px;float: right;font-size:40px;font-weight:bold;margin: 5px' type='submit' value='Close Behemoth'><br>"
   "</form>"
-    "<form action='/find' method='get'>"
-  "<input type='submit' value='Find Behemoth'>"
+  "<form action='/find' method='get'>"
+    "<input style='width: 45%;height: 80px;background:#f2ff33;cursor:pointer;border-radius: 5px;float: left;font-size:40px;font-weight:bold;margin: 5px' type='submit' value='Find Behemoth'>"
   "</form>"
   "<form action='/changesim' method='get'>"
-  "<input type='submit' value='Change SIM'>"
+    "<input style='width: 45%;height: 80px;background:#18d4ff;cursor:pointer;border-radius: 5px;float: right;font-size:40px;font-weight:bold;margin: 5px' type='submit' value='Change SIM'>"
   "</form>"
+  "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
+  "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
+    "<input type='file' style='width: 40%;height: 40px; font-size:20px' name='update'><br>"
+    "<input type='submit' style='width: 20%;height: 40px; font-size:20px' value='Update'>"
+  "</form>"
+  "<div id='prg' style='font-size: 200%;float: bottom;'>progress: 0%</div><br>"
   "<script>"
-  "$('form').submit(function(e){"
+  "$('#upload_form').submit(function(e){"
   "e.preventDefault();"
   "var form = $('#upload_form')[0];"
   "var data = new FormData(form);"
@@ -217,12 +233,16 @@ char* serverIndex =
 
 void setup() 
 {
+  u8g2.begin(); // инициализация OLED дисплея
+  u8g2.enableUTF8Print();
+  u8g2.setFont(u8g2_font_cu12_t_cyrillic);
+
   // put your setup code here, to run once:
   Serial.begin(115200);
   sensors.begin();
   delay(1000); //для стабилизации
-  lcd.init(); // Инициализация дисплея
-  lcd.backlight(); // Включение подсветки дисплея
+  //lcd.init(); // Инициализация дисплея
+  //lcd.backlight(); // Включение подсветки дисплея
   WiFi.begin(ssid, password);
   Serial.println("");
   // Ожидание подключения к сети
@@ -230,17 +250,28 @@ void setup()
     {
       delay(500);
       Serial.print(".");
-      lcd.print(".");
+      u8g2.setCursor(0, 15);
+      u8g2.print(".");
+      u8g2.sendBuffer();
+      forreboot=forreboot + 1;
+      if (forreboot > 20) {
+        ESP.restart();
+      }
+      
     }
   Serial.println("");
   Serial.print("Connected to ");
-  lcd.clear();lcd.print("Connected to ");lcd.setCursor(0,1);
+//  lcd.clear();lcd.print("Connected to ");lcd.setCursor(0,1);
+  u8g2.clear();u8g2.setCursor(0, 15);
+  u8g2.print("Connected to ");
   Serial.println(ssid);
-  lcd.print(ssid);lcd.setCursor(0,2);
+  u8g2.print(ssid);u8g2.setCursor(0,30);
   Serial.print("my IP address: ");
-  lcd.print("IP: ");
+  u8g2.print("IP: ");
   Serial.println(WiFi.localIP());
-  lcd.print(WiFi.localIP());
+  u8g2.print(WiFi.localIP());
+  u8g2.sendBuffer();
+  delay(2000);
 
     /*use mdns for host name resolution*/
   if (!MDNS.begin(host)) { //http://esp32.local
@@ -291,6 +322,7 @@ void setup()
   server.on("/metrics", HTTP_GET, []() {
     server.send(200, "text/html", metrics());  
   });
+  server.on("/startengine", getSNMPtime);
   server.begin();
 
 
@@ -349,7 +381,8 @@ void getSNMP(){
     }
     else {
 //    SerialPrint (); // Вывод данных в COM-port
-    LcdPrint (); // Вывод данных на LCD-дисплей
+    //LcdPrint (); // Вывод данных на LCD-дисплей
+    OledPrint (); // Вывод данных на OLED-дисплей
     }
 
     GetRequestRsrp.addOIDPointer(callbackRsrp);                
@@ -440,14 +473,49 @@ void LcdPrint () {
   lcd.setCursor(0,1);
   printDigits(hour());lcd.print(":");printDigits(minute());lcd.print("  ");printDigits(day());lcd.print("  ");lcd.print(calendar[0][month()]);lcd.print("  ");lcd.print(calendar[1][weekday()]);
   lcd.setCursor(0,3);
-  lcd.print(int(round(sensors.getTempC(sensor1))));lcd.print(" C");
+  lcd.print(int(round(sensors.getTempC(sensor_int))));lcd.print(" C");
   lcd.setCursor(15,3);
-  lcd.print(int(round(sensors.getTempC(sensor2))));lcd.print(" C");
+  lcd.print(int(round(sensors.getTempC(sensor_out))));lcd.print(" C");
+}
+
+void OledPrint () {
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_cu12_t_cyrillic);
+  u8g2.setCursor(0,15); u8g2.print(PrintRSRP);
+    OperCount = (operators[countryIndex][operatorIndex]);OperCount += (" ");OperCount += (Country);
+    OperCount.toCharArray(opercount, 15);
+    printopercount = (256 - (u8g2.getUTF8Width(opercount)));
+  u8g2.setCursor(printopercount, 15);
+  u8g2.print(OperCount);
+    PrintDate = (day());PrintDate += (" ");PrintDate += (calendar[0][month()]);PrintDate += (", ");PrintDate += (calendar[1][weekday()]);
+    PrintDate.toCharArray(printdate,40);
+    printdatex=((256 - (u8g2.getUTF8Width(printdate)))/2);
+  u8g2.setCursor(printdatex, 60);
+  u8g2.print(PrintDate);
+  u8g2.setCursor(0,37);
+  u8g2.print(int(round(sensors.getTempC(sensor_out))));u8g2.print(" C");
+  PrintTemp = (int(round(sensors.getTempC(sensor_int))));PrintTemp += (" C");
+  PrintTemp.toCharArray(printtemp,15);
+  printtempx=(256-u8g2.getUTF8Width(printtemp));
+  u8g2.setCursor(printtempx,37);
+  u8g2.print(PrintTemp);
+//  u8g2.drawUTF8(0, 30, "Как заебала эта хуйня!");
+  u8g2.setFont(u8g2_font_timB24_tn);
+  u8g2.setCursor(90, 45);
+  printDigits(hour());u8g2.print(":");printDigits(minute());
+  u8g2.sendBuffer();          // transfer internal memory to the display
 }
 
 void headerNotConnect() {
-  lcd.setCursor(0,0);
-  lcd.print("   Not Connected    ");
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_cu12_t_cyrillic);
+  u8g2.setCursor(81,15);
+  u8g2.print("Not Connected");
+  u8g2.sendBuffer();
+  forreboot=forreboot + 1;
+      if (forreboot > 10) {
+        ESP.restart();
+      }
   delay(2000);
 }
 
@@ -455,8 +523,8 @@ void printDigits(int digits) {
   // вспомогательная функция для печати данных о времени 
   // на монитор порта; добавляет в начале двоеточие и ноль:
     if (digits < 10)
-    lcd.print('0');
-  lcd.print(digits);
+    u8g2.print('0');
+  u8g2.print(digits);
 }
 
 void IRAM_ATTR ISR_btn1(){
@@ -495,9 +563,13 @@ void taskButton1( void *pvParameters ){
 }
 
 void change_sim() {
-  lcd.setCursor(0,2);
-  lcd.print("  change sim-slot   ");
-
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_cu12_t_cyrillic);
+  u8g2.setCursor(75,15);
+  u8g2.print("Change Sim-slot");
+  u8g2.sendBuffer();
+  delay(2000);
+  
   GetRequestChangeSim.addOIDPointer(callbackChangeSim);                
   GetRequestChangeSim.setIP(WiFi.localIP());                 
   GetRequestChangeSim.setUDP(&Udp);
@@ -509,8 +581,8 @@ void change_sim() {
 
 String metrics() {
   String result;
-  result += "Temp in : " + String(int(round(sensors.getTempC(sensor2))));result += " С";result += "<br>";
-  result += "Temp out: " + String(int(round(sensors.getTempC(sensor1))));result += " С";result += "<br>";
+  result += "Temp in : " + String(int(round(sensors.getTempC(sensor_int))));result += " С";result += "<br>";
+  result += "Temp out: " + String(int(round(sensors.getTempC(sensor_out))));result += " С";result += "<br>";
   result += "RSSI: " + PrintRSRP;result += "    ";result += operators[countryIndex][operatorIndex];result += " ";result += Country;result += "<br>";
   return result;
 }
