@@ -493,12 +493,14 @@ void OledPrint () {
   u8g2.setCursor(printdatex, 60);
   u8g2.print(PrintDate);
   u8g2.setCursor(0,37);
-  u8g2.print(int(round(sensors.getTempC(sensor_out))));u8g2.print(" C");
-  PrintTemp = (int(round(sensors.getTempC(sensor_int))));PrintTemp += (" C");
+  u8g2.setFont(u8g2_font_cu12_tf);
+  u8g2.print(int(round(sensors.getTempC(sensor_out))));u8g2.print("°C");
+  PrintTemp = (int(round(sensors.getTempC(sensor_int))));PrintTemp += ("°C");
   PrintTemp.toCharArray(printtemp,15);
   printtempx=(256-u8g2.getUTF8Width(printtemp));
   u8g2.setCursor(printtempx,37);
   u8g2.print(PrintTemp);
+  u8g2.setFont(u8g2_font_cu12_t_cyrillic);
 //  u8g2.drawUTF8(0, 30, "Как заебала эта хуйня!");
   u8g2.setFont(u8g2_font_timB24_tn);
   u8g2.setCursor(90, 45);
