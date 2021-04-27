@@ -505,7 +505,7 @@ void OledPrint () {
   u8g2.setFont(u8g2_font_timB24_tn);
   u8g2.setCursor(90, 45);
   printDigits(hour());u8g2.print(":");printDigits(minute());
-  u8g2.sendBuffer();          // transfer internal memory to the display
+  u8g2.sendBuffer();
 }
 
 void headerNotConnect() {
