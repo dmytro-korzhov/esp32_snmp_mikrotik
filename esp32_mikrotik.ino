@@ -13,6 +13,14 @@
 // конфигурация OLED дисплея
 U8G2_SSD1322_NHD_256X64_F_4W_SW_SPI u8g2(U8G2_R0, 18, 23, 5, 13, 14);
 
+// переменные для вольтметра
+int analogvalue;
+int voltpin = 32;
+float input_volt = 0.0;
+float temp=0.0;
+float r1=82400.0; //сопротивление резистора r1
+float r2=7000.0; // сопротивление резистора r2
+
 
 // Порт GPIO к которому подключена кнопка
 #define PIN_BUTTON 26
@@ -43,7 +51,7 @@ void getSNMPtime();
 
 //описание массива для корректного отображения календаря
 const char *calendar[2][13] = {
-  {0, "января", "февраля", "марта", "апреля", "мая" "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"},
+  {0, "января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"},
   {0, "воскресение", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"},
 };
 
@@ -362,6 +370,7 @@ lcd.clear();
 
 void loop() {
   // put your main code here, to run repeatedly:
+  voltmeter();
   snmp.loop();
   getSNMP();
   server.handleClient();
@@ -501,6 +510,10 @@ void OledPrint () {
   u8g2.setCursor(printtempx,37);
   u8g2.print(PrintTemp);
   u8g2.setFont(u8g2_font_cu12_t_cyrillic);
+  u8g2.setCursor(0,60);
+  u8g2.print(input_volt);
+  u8g2.print(" V");
+  //u8g2.print(analogvalue);
 //  u8g2.drawUTF8(0, 30, "Как заебала эта хуйня!");
   u8g2.setFont(u8g2_font_timB24_tn);
   u8g2.setCursor(90, 45);
@@ -587,4 +600,13 @@ String metrics() {
   result += "Temp out: " + String(int(round(sensors.getTempC(sensor_out))));result += " С";result += "<br>";
   result += "RSSI: " + PrintRSRP;result += "    ";result += operators[countryIndex][operatorIndex];result += " ";result += Country;result += "<br>";
   return result;
+}
+
+void voltmeter() {
+  analogvalue = analogRead(voltpin);
+  input_volt = (((analogvalue * 3.3 ) / 4095) / (r2/(r1+r2)));
+  if (input_volt < 0.1)
+{
+input_volt=0.0;
+}
 }
