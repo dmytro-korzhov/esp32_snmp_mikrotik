@@ -24,6 +24,8 @@ float r2=7000.0; // сопротивление резистора r2
 
 // Порт GPIO к которому подключена кнопка
 #define PIN_BUTTON 26
+// Порт GPIO c кнопкой выключения дисплея
+#define PIN_DISPLAY_OFF 25
 // Порт GPIO с температурными сенсорами
 #define ONE_WIRE_BUS 15
 // Минимальный таймаут между событиями нажатия кнопки
@@ -62,6 +64,7 @@ bool state_btn  = true;
 void taskButton1( void *pvParameters );
 SemaphoreHandle_t btn1Semaphore;
 void change_sim();
+int pwrs;
 
 //параметры дисплея
 LiquidCrystal_I2C lcd(0x27,20,4);
@@ -553,18 +556,22 @@ void IRAM_ATTR ISR_btn1(){
 void taskButton1( void *pvParameters ){
 // Определяем режим работы GPIO с кнопкой   
    pinMode(PIN_BUTTON,INPUT_PULLUP);
+   pinMode(PIN_DISPLAY_OFF,INPUT_PULLUP);
 // Создаем семафор     
    btn1Semaphore = xSemaphoreCreateBinary();
 // Сразу "берем" семафор чтобы не было первого ложного срабатывания кнопки   
    xSemaphoreTake( btn1Semaphore, 100 );
    while(true){
 // Запускаем обработчик прерывания (кнопка замыкает GPIO на землю)
-      attachInterrupt(PIN_BUTTON, ISR_btn1, CHANGE);   
+      attachInterrupt(PIN_BUTTON, ISR_btn1, CHANGE);
+      attachInterrupt(PIN_DISPLAY_OFF, ISR_btn1, CHANGE);
 // Ждем "отпускание" семафора
       xSemaphoreTake( btn1Semaphore, portMAX_DELAY );
 // Отключаем прерывание для устранения повторного срабатывания прерывания во время обработки
       detachInterrupt(PIN_BUTTON);
+      detachInterrupt(PIN_DISPLAY_OFF);
       bool st = digitalRead(PIN_BUTTON);
+      bool st1 = digitalRead(PIN_DISPLAY_OFF);
       uint32_t ms = millis();
 // Проверка изменения состояния кнопки или превышение таймаута      
       if( st != state_btn || ms - ms_btn > TM_BUTTON){
@@ -573,12 +580,20 @@ void taskButton1( void *pvParameters ){
           if( st == LOW ){
            change_sim();           
          }
+      }
+      if( st1 != state_btn || ms - ms_btn > TM_BUTTON){
+          state_btn = st1;
+          ms_btn    = ms;
+          if( st1 == LOW ){
+           poweroffdisplay();           
+         }
+      }
          
 // Задержка для устранения дребезга контактов
           vTaskDelay(TM_BUTTON);
-      }
    }
 }
+
 
 void change_sim() {
   u8g2.clearBuffer();
@@ -613,4 +628,15 @@ void voltmeter() {
 {
 input_volt=0.0;
 }
+}
+
+void poweroffdisplay() {
+  if (pwrs == 0) {
+    pwrs = 1;
+  }
+  else {
+    pwrs = 0;
+  }
+  Serial.print(pwrs);
+  u8g2.setPowerSave(pwrs);
 }
