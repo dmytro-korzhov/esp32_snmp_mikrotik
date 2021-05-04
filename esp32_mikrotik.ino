@@ -15,21 +15,24 @@ U8G2_SSD1322_NHD_256X64_F_4W_SW_SPI u8g2(U8G2_R0, 18, 23, 5, 13, 14);
 
 // переменные для вольтметра
 int analogvalue;
-int voltpin = 32;
 float input_volt = 0.0;
 float temp=0.0;
 float r1=82400.0; //сопротивление резистора r1
 float r2=7000.0; // сопротивление резистора r2
 
 
-// Порт GPIO к которому подключена кнопка
+// Порт GPIO с кнопкой смены сим
 #define PIN_BUTTON 26
 // Порт GPIO c кнопкой выключения дисплея
 #define PIN_DISPLAY_OFF 25
+// Порт GPIO c кнопкой контраста дисплея
+#define PIN_CONTRAST 16
 // Порт GPIO с температурными сенсорами
 #define ONE_WIRE_BUS 15
+// Порт ADC для подключения вольтметра
+#define voltpin 32
 // Минимальный таймаут между событиями нажатия кнопки
-#define TM_BUTTON 100
+#define TM_BUTTON 1000
 
 // Настраиваем экземпляр oneWire для связи с устройством OneWire
 OneWire oneWire(ONE_WIRE_BUS);
@@ -65,6 +68,7 @@ void taskButton1( void *pvParameters );
 SemaphoreHandle_t btn1Semaphore;
 void change_sim();
 int pwrs;
+int contrast;
 
 //параметры дисплея
 LiquidCrystal_I2C lcd(0x27,20,4);
@@ -557,7 +561,8 @@ void taskButton1( void *pvParameters ){
 // Определяем режим работы GPIO с кнопкой   
    pinMode(PIN_BUTTON,INPUT_PULLUP);
    pinMode(PIN_DISPLAY_OFF,INPUT_PULLUP);
-// Создаем семафор     
+   pinMode(PIN_CONTRAST,INPUT_PULLUP);
+   // Создаем семафор     
    btn1Semaphore = xSemaphoreCreateBinary();
 // Сразу "берем" семафор чтобы не было первого ложного срабатывания кнопки   
    xSemaphoreTake( btn1Semaphore, 100 );
@@ -565,13 +570,16 @@ void taskButton1( void *pvParameters ){
 // Запускаем обработчик прерывания (кнопка замыкает GPIO на землю)
       attachInterrupt(PIN_BUTTON, ISR_btn1, CHANGE);
       attachInterrupt(PIN_DISPLAY_OFF, ISR_btn1, CHANGE);
+      attachInterrupt(PIN_CONTRAST, ISR_btn1, CHANGE);
 // Ждем "отпускание" семафора
       xSemaphoreTake( btn1Semaphore, portMAX_DELAY );
 // Отключаем прерывание для устранения повторного срабатывания прерывания во время обработки
       detachInterrupt(PIN_BUTTON);
       detachInterrupt(PIN_DISPLAY_OFF);
+      detachInterrupt(PIN_CONTRAST);
       bool st = digitalRead(PIN_BUTTON);
       bool st1 = digitalRead(PIN_DISPLAY_OFF);
+      bool st2 = digitalRead(PIN_CONTRAST);
       uint32_t ms = millis();
 // Проверка изменения состояния кнопки или превышение таймаута      
       if( st != state_btn || ms - ms_btn > TM_BUTTON){
@@ -586,6 +594,13 @@ void taskButton1( void *pvParameters ){
           ms_btn    = ms;
           if( st1 == LOW ){
            poweroffdisplay();           
+         }
+      }
+      if( st2 != state_btn || ms - ms_btn > TM_BUTTON){
+          state_btn = st1;
+          ms_btn    = ms;
+          if( st2 == LOW ){
+           dayornight();           
          }
       }
          
@@ -639,4 +654,14 @@ void poweroffdisplay() {
   }
   Serial.print(pwrs);
   u8g2.setPowerSave(pwrs);
+ }
+
+void dayornight() {
+  if (contrast == 0) {
+    contrast = 255;
+  }
+  else {
+    contrast = 0;
+  }
+  u8g2.setContrast(contrast);
 }
