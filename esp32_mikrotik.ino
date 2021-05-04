@@ -190,12 +190,15 @@ char* serverIndex =
   "<form action='/changesim' method='get'>"
     "<input style='width: 45%;height: 80px;background:#18d4ff;cursor:pointer;border-radius: 5px;float: right;font-size:40px;font-weight:bold;margin: 5px' type='submit' value='Change SIM'>"
   "</form>"
+  "<form action='/stopengine' method='get'>"
+    "<input style='width: 99.5%;height: 80px;background:#ff0000;cursor:pointer;border-radius: 5px;font-size:60px;font-weight:bold;margin: 5px' type='submit' value='Stop Engine'>"
+  "</form>"
   "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
   "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
-    "<input type='file' style='width: 40%;height: 40px; font-size:20px' name='update'><br>"
-    "<input type='submit' style='width: 20%;height: 40px; font-size:20px' value='Update'>"
+    "<input type='file' style='margin-top: 50px;width: 40%;height: 40px; font-size:20px' name='update'><br>"
+    "<input type='submit' style='margin-top: 50px;width: 20%;height: 40px; font-size:20px' value='Update'>"
   "</form>"
-  "<div id='prg' style='font-size: 200%;float: bottom;'>progress: 0%</div><br>"
+  "<div id='prg' style='margin-top: 50px;font-size: 200%;float: bottom;'>progress: 0%</div><br>"
   "<script>"
   "$('#upload_form').submit(function(e){"
   "e.preventDefault();"
@@ -599,6 +602,7 @@ String metrics() {
   result += "Temp in : " + String(int(round(sensors.getTempC(sensor_int))));result += " С";result += "<br>";
   result += "Temp out: " + String(int(round(sensors.getTempC(sensor_out))));result += " С";result += "<br>";
   result += "RSSI: " + PrintRSRP;result += "    ";result += operators[countryIndex][operatorIndex];result += " ";result += Country;result += "<br>";
+  result += "Voltage : " + String(input_volt);result += " V";result += "<br>";
   return result;
 }
 
