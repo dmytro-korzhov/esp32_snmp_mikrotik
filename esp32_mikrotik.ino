@@ -336,7 +336,10 @@ void setup()
       }
     }
   });
-  server.on("/changesim", change_sim);
+  server.on("/changesim", HTTP_GET, [](AsyncWebServerRequest *request) {
+    change_sim();
+    request->redirect("/");
+  });
   server.on("/metrics", HTTP_GET, []() {
     server.send(200, "text/html", metrics());  
   });
