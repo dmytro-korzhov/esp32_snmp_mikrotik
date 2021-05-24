@@ -336,7 +336,11 @@ void setup()
       }
     }
   });
-  server.on("/changesim", change_sim);
+  server.on("/changesim", HTTP_GET, []() {
+    change_sim();
+    server.sendHeader("Location", "/",true);
+    server.send(302, "text/plane",""); 
+  });
   server.on("/metrics", HTTP_GET, []() {
     server.send(200, "text/html", metrics());  
   });
