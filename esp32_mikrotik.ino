@@ -344,7 +344,11 @@ void setup()
   server.on("/metrics", HTTP_GET, []() {
     server.send(200, "text/html", metrics());  
   });
-  server.on("/startengine", getSNMPtime);
+  server.on("/startengine", HTTP_GET, []() {
+    getSNMPtime();
+    server.sendHeader("Location", "/",true);
+    server.send(302, "text/plane",""); 
+  });
   server.begin();
 
 
