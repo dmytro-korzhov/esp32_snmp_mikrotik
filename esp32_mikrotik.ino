@@ -23,9 +23,9 @@ float r2=7000.0; // сопротивление резистора r2
 
 
 // Порт GPIO с кнопкой смены сим
-#define PIN_BUTTON 26
+#define PIN_BUTTON 35
 // Порт GPIO c кнопкой выключения дисплея
-#define PIN_DISPLAY_OFF 25
+#define PIN_DISPLAY_OFF 34
 // Порт GPIO c кнопкой контраста дисплея
 #define PIN_CONTRAST 16
 // Порт GPIO с температурными сенсорами
@@ -33,11 +33,11 @@ float r2=7000.0; // сопротивление резистора r2
 // Порт ADC для подключения вольтметра
 #define voltpin 33
 //кнопка брелка 1
-#define starlineremote_1 32
+#define starlineremote_1 27
 //кнопка брелка 2
-#define starlineremote_2 21
+#define starlineremote_2 26
 //кнопка брелка 3
-#define starlineremote_3 13
+#define starlineremote_3 25
 // Минимальный таймаут между событиями нажатия кнопки
 #define TM_BUTTON 1000
 
