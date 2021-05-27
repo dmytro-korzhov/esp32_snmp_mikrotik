@@ -9,6 +9,7 @@
 #include "OneWire.h"
 #include "DallasTemperature.h"
 #include "U8g2lib.h"
+#include "driver/gpio.h"
 
 // конфигурация OLED дисплея
 U8G2_SSD1322_NHD_256X64_F_4W_SW_SPI u8g2(U8G2_R0, 18, 23, 5, 13, 14);
@@ -30,9 +31,17 @@ float r2=7000.0; // сопротивление резистора r2
 // Порт GPIO с температурными сенсорами
 #define ONE_WIRE_BUS 15
 // Порт ADC для подключения вольтметра
-#define voltpin 32
+#define voltpin 33
+//кнопка брелка 1
+#define starlineremote_1 32
+//кнопка брелка 2
+#define starlineremote_2 21
+//кнопка брелка 3
+#define starlineremote_3 13
 // Минимальный таймаут между событиями нажатия кнопки
 #define TM_BUTTON 1000
+
+
 
 // Настраиваем экземпляр oneWire для связи с устройством OneWire
 OneWire oneWire(ONE_WIRE_BUS);
@@ -345,12 +354,51 @@ void setup()
     server.send(200, "text/html", metrics());  
   });
   server.on("/startengine", HTTP_GET, []() {
-    getSNMPtime();
+    pinMode(starlineremote_1, OUTPUT);
+    digitalWrite(starlineremote_1, LOW);
+    delay(3000);
+    pinMode(starlineremote_1, INPUT);
     server.sendHeader("Location", "/",true);
     server.send(302, "text/plane",""); 
   });
+  server.on("/close", HTTP_GET, []() {
+    pinMode(starlineremote_1, OUTPUT);
+    digitalWrite(starlineremote_1, LOW);
+    delay(500);
+    pinMode(starlineremote_1, INPUT);
+    server.sendHeader("Location", "/",true);
+    server.send(302, "text/plane",""); 
+  });
+  server.on("/open", HTTP_GET, []() {
+    pinMode(starlineremote_2, OUTPUT);
+    digitalWrite(starlineremote_2, LOW);
+    delay(500);
+     pinMode(starlineremote_2, INPUT);
+    server.sendHeader("Location", "/",true);
+    server.send(302, "text/plane","");
+  });
+  server.on("/find", HTTP_GET, []() {
+    pinMode(starlineremote_3, OUTPUT);
+    digitalWrite(starlineremote_3, LOW);
+    delay(500);
+    pinMode(starlineremote_3, INPUT);
+    server.sendHeader("Location", "/",true);
+    server.send(302, "text/plane",""); 
+  });
+  server.on("/stopengine", HTTP_GET, []() {
+    pinMode(starlineremote_1, OUTPUT);
+    digitalWrite(starlineremote_1, LOW);
+    delay(1000);
+    pinMode(starlineremote_1, INPUT);
+    pinMode(starlineremote_2, OUTPUT);
+    digitalWrite(starlineremote_2, LOW);
+    delay(500);
+    pinMode(starlineremote_2, INPUT);
+    server.sendHeader("Location", "/",true);
+    server.send(302, "text/plane",""); 
+  });
+  
   server.begin();
-
 
   snmp.setUDP(&Udp);// дать snmp указатель на объект UDP
   snmp.begin();// запустить прослушиватель SNMP
