@@ -388,8 +388,9 @@ void setup()
   server.on("/stopengine", HTTP_GET, []() {
     pinMode(starlineremote_1, OUTPUT);
     digitalWrite(starlineremote_1, LOW);
-    delay(1000);
+    delay(1500);
     pinMode(starlineremote_1, INPUT);
+    delay(500);
     pinMode(starlineremote_2, OUTPUT);
     digitalWrite(starlineremote_2, LOW);
     delay(500);
