@@ -1,7 +1,6 @@
 #include <TimeLib.h>
 #include <WiFi.h>
 #include <Arduino_SNMP.h>
-#include <LiquidCrystal_I2C.h>
 #include <ESP32Ping.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -23,7 +22,7 @@ float r2=7000.0; // сопротивление резистора r2
 
 
 // Порт GPIO с кнопкой смены сим
-#define PIN_BUTTON 35
+#define PIN_BUTTON 36
 // Порт GPIO c кнопкой выключения дисплея
 #define PIN_DISPLAY_OFF 34
 // Порт GPIO c кнопкой контраста дисплея
@@ -78,9 +77,6 @@ SemaphoreHandle_t btn1Semaphore;
 void change_sim();
 int pwrs;
 int contrast;
-
-//параметры дисплея
-LiquidCrystal_I2C lcd(0x27,20,4);
 
 // переменные для SNMP
 unsigned int rsrp = 0; //уровень сигнала
@@ -431,7 +427,7 @@ while (snmptime < 60){ // ждем минуту для установки вре
   }
 snmptime = snmptime + (3600 * timezone);
 setTime(snmptime);
-lcd.clear();
+//lcd.clear();
 }
 
 
@@ -521,7 +517,7 @@ void intermediateCalc () { // промежуточные вычисления д
     Country = "No Country";
     countryIndex = 0;
   }
-  if ((UINT16_MAX-rsrp+1) > 115) {
+  if ((UINT16_MAX-rsrp+1) > 125) {
       PrintRSRP = ("Low RSRP");
   }
   else {
@@ -541,18 +537,18 @@ void SerialPrint () {
   Serial.println("----------------------");
 }
 
-void LcdPrint () {
-  lcd.clear();
-  lcd.print(PrintRSRP);
-  lcd.setCursor(9,0);
-  lcd.print(operators[countryIndex][operatorIndex]);lcd.print(" ");lcd.print(Country);
-  lcd.setCursor(0,1);
-  printDigits(hour());lcd.print(":");printDigits(minute());lcd.print("  ");printDigits(day());lcd.print("  ");lcd.print(calendar[0][month()]);lcd.print("  ");lcd.print(calendar[1][weekday()]);
-  lcd.setCursor(0,3);
-  lcd.print(int(round(sensors.getTempC(sensor_int))));lcd.print(" C");
-  lcd.setCursor(15,3);
-  lcd.print(int(round(sensors.getTempC(sensor_out))));lcd.print(" C");
-}
+//void LcdPrint () {
+//  lcd.clear();
+//  lcd.print(PrintRSRP);
+//  lcd.setCursor(9,0);
+//  lcd.print(operators[countryIndex][operatorIndex]);lcd.print(" ");lcd.print(Country);
+//  lcd.setCursor(0,1);
+//  printDigits(hour());lcd.print(":");printDigits(minute());lcd.print("  ");printDigits(day());lcd.print("  ");lcd.print(calendar[0][month()]);lcd.print("  ");lcd.print(calendar[1][weekday()]);
+//  lcd.setCursor(0,3);
+//  lcd.print(int(round(sensors.getTempC(sensor_int))));lcd.print(" C");
+//  lcd.setCursor(15,3);
+//  lcd.print(int(round(sensors.getTempC(sensor_out))));lcd.print(" C");
+//}
 
 void OledPrint () {
   u8g2.clearBuffer();
